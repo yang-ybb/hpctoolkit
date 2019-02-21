@@ -9,7 +9,7 @@
 // HPCToolkit is at 'hpctoolkit.org' and in 'README.Acknowledgments'.
 // --------------------------------------------------------------------------
 //
-// Copyright ((c)) 2002-2018, Rice University
+// Copyright ((c)) 2002-2019, Rice University
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -88,7 +88,8 @@
 #include "sample-sources/simple_oo.h"
 #include "sample-sources/sample_source_obj.h"
 #include "sample-sources/common.h"
-
+#include "sample-sources/ss-errno.h"
+ 
 #include <hpcrun/cct_insert_backtrace.h>
 #include <hpcrun/files.h>
 #include <hpcrun/hpcrun_stats.h>
@@ -154,10 +155,6 @@
 #define PERF_EVENT_AVAILABLE_UNKNOWN 0
 #define PERF_EVENT_AVAILABLE_NO      1
 #define PERF_EVENT_AVAILABLE_YES     2
-
-#define RAW_NONE        0
-#define RAW_IBS_FETCH   1
-#define RAW_IBS_OP      2
 
 #define PERF_MULTIPLEX_RANGE 1.2
 
@@ -460,6 +457,12 @@ perf_thread_fini(int nevents, event_thread_t *event_thread)
   monitor_real_pthread_sigmask(SIG_BLOCK, &perf_sigset, NULL);
 
   for(int i=0; i<nevents; i++) {
+    if (!event_thread) {
+       continue; // in some situations, it is possible a shutdown signal is delivered
+       	         // while hpcrun is in the middle of abort.
+		 // in this case, all information is null and we shouldn't
+		 // start profiling.
+    }
     if (event_thread[i].fd >= 0) {
       close(event_thread[i].fd);
       event_thread[i].fd = PERF_FD_FINALIZED;
@@ -922,6 +925,11 @@ METHOD_FN(gen_event_set, int lush_metrics)
   int nevents 	  = (self->evl).nevents;
   int num_metrics = hpcrun_get_num_metrics();
 
+  // -------------------------------------------------------------------------
+  // TODO: we need to fix this allocation.
+  //       there is no need to allocate a memory if we are reusing thread data
+  // -------------------------------------------------------------------------
+
   // a list of event information, private for each thread
   event_thread_t  *event_thread = (event_thread_t*) hpcrun_malloc(sizeof(event_thread_t) * nevents);
 
@@ -944,7 +952,9 @@ METHOD_FN(gen_event_set, int lush_metrics)
   {
     // initialize this event. If it's valid, we set the metric for the event
     if (!perf_thread_init( &(event_desc[i]), &(event_thread[i])) ) {
-      EEMSG("Failed to initialize the %s event.", event_desc[i].metric_desc->name);
+      EEMSG("Failed to initialize the %s event.: %s", event_desc[i].metric_desc->name,
+             strerror(errno));
+      exit(1);
     }
   }
 
@@ -1009,6 +1019,8 @@ perf_event_handler(
   void* context
 )
 {
+  HPCTOOLKIT_APPLICATION_ERRNO_SAVE();
+
   // ----------------------------------------------------------------------------
   // check #0:
   // if the interrupt came while inside our code, then drop the sample
@@ -1020,7 +1032,9 @@ perf_event_handler(
   if (! hpcrun_safe_enter_async(pc)) {
     hpcrun_stats_num_samples_blocked_async_inc();
 
-    return 0; // tell monitor the signal has been handled.
+    HPCTOOLKIT_APPLICATION_ERRNO_RESTORE();
+
+    return 0; // tell monitor that the signal has been handled
   }
 
   // ----------------------------------------------------------------------------
@@ -1034,7 +1048,9 @@ perf_event_handler(
 
   // if finalized already, refuse to handle any more samples
   if (perf_was_finalized(nevents, event_thread)) {
-    return 0;
+    HPCTOOLKIT_APPLICATION_ERRNO_RESTORE();
+
+    return 0; // tell monitor that the signal has been handled
   }
 
   perf_stop_all(nevents, event_thread);
@@ -1048,7 +1064,9 @@ perf_event_handler(
          siginfo->si_code);
     perf_start_all(nevents, event_thread);
 
-    return 1; // tell monitor the signal has not been handled.
+    HPCTOOLKIT_APPLICATION_ERRNO_RESTORE();
+
+    return 1; // tell monitor the signal has not been handled
   }
 
   // ----------------------------------------------------------------------------
@@ -1056,7 +1074,9 @@ perf_event_handler(
   // if sampling disabled explicitly for this thread, skip all processing
   // ----------------------------------------------------------------------------
   if (hpcrun_thread_suppress_sample) {
-    return 0;
+    HPCTOOLKIT_APPLICATION_ERRNO_RESTORE();
+
+    return 0; // tell monitor that the signal has been handled
   }
 
   int fd = siginfo->si_fd;
@@ -1073,6 +1093,8 @@ perf_event_handler(
 
     restart_perf_event(fd);
     perf_start_all(nevents, event_thread);
+
+    HPCTOOLKIT_APPLICATION_ERRNO_RESTORE();
 
     return 0; // tell monitor the signal has not been handled.
   }
@@ -1095,7 +1117,9 @@ perf_event_handler(
 
     perf_start_all(nevents, event_thread);
 
-    return 1; // tell monitor the signal has not been handled.
+    HPCTOOLKIT_APPLICATION_ERRNO_RESTORE();
+
+    return 1; // tell monitor the signal has not been handled
   }
 
   // ----------------------------------------------------------------------------
@@ -1124,6 +1148,8 @@ perf_event_handler(
 
   hpcrun_safe_exit();
 
-  return 0; // tell monitor the signal has been handled.
+  HPCTOOLKIT_APPLICATION_ERRNO_RESTORE();
+
+  return 0; // tell monitor that the signal has been handled
 }
 
