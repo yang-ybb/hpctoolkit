@@ -150,6 +150,7 @@ readSingle
   fprintf(stderr, "reading profile %d\n", i);
   uint groupId = (groupMap) ? (*groupMap)[i] : 0;
   Prof::CallPath::Profile* p = read(profileFiles[i], groupId, rFlags);
+  p->addDirectory(profileFiles[i]);
   return p;
 }
 
