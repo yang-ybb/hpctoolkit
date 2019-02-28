@@ -86,7 +86,6 @@
 #include "Metric-IData.hpp"
 
 #include "MetricAccessorInband.hpp"
-#include "MetricAccessorInterval.hpp"
 
 #include "Struct-Tree.hpp"
 
@@ -328,6 +327,7 @@ public:
   static ANodeTy
   IntToANodeType(long i);
 
+
 private:
   static const std::string NodeNames[TyNUMBER];
 
@@ -359,6 +359,9 @@ public:
   {
     // pass 2 to threaded_unique_id to keep lower bit clear for 
     // HPCRUN_FMT_RetainIdFlag
+    MetricAccessor *ma = metric_accessor(m_id);
+    for (unsigned int i = 0; i < metrics.numMetrics(); ++i)
+      ma->idx(i) = metrics.c_idx(i);
   }
 
   virtual ~ANode()
