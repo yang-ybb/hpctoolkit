@@ -381,7 +381,7 @@ const string ANode::NodeNames[ANode::TyNUMBER] = {
 };
 
 
-std::vector<MetricAccessor *> ANode::s_allMetrics;
+std::map<const ANode*,MetricAccessor *> ANode::s_allMetrics;
 
 const string&
 ANode::ANodeTyToName(ANodeTy tp)
@@ -508,7 +508,7 @@ ANode::zeroMetricsDeep(uint mBegId, uint mEndId)
 
   for (ANodeIterator it(this); it.Current(); ++it) {
     ANode* n = it.current();
-    MetricAccessor *ma = CCT::ANode::metric_accessor(n->id());
+    MetricAccessor *ma = CCT::ANode::metric_accessor(n);
     for (unsigned int i = ma->idx_ge(mBegId); i < mEndId; i = ma->idx_ge(i+1))
       ma->idx(i) = 0.;
   }
@@ -550,11 +550,11 @@ ANode::aggregateMetricsIncl(const VMAIntervalSet& ivalset, TreeMetricAccessor &t
 	   it1 != ivalset.end(); ++it1) {
 	const VMAInterval& ival = *it1;
 	uint mBegId = (uint)ival.beg(), mEndId = (uint)ival.end();
-	MetricAccessor *ma = CCT::ANode::metric_accessor(n->id());
+	MetricAccessor *ma = CCT::ANode::metric_accessor(n);
 
 	for (uint mId = ma->idx_ge(mBegId); mId < mEndId; mId = ma->idx_ge(mId+1)) {
 	  double mVal = ma->c_idx(mId);
-	  CCT::ANode::metric_accessor(n_parent->id())->idx(mId) += mVal;
+	  CCT::ANode::metric_accessor(n_parent)->idx(mId) += mVal;
 	}
       }
     }
@@ -697,7 +697,7 @@ void
 ANode::computeMetricsMe(const Metric::Mgr& mMgr, TreeMetricAccessor &tma, uint mBegId, uint mEndId,
 			bool doFinal)
 {
-  MetricAccessorInterval mda(*dynamic_cast<MetricAccessorInterval *>(Prof::CCT::ANode::metric_accessor(id())));
+  MetricAccessorInterval mda(*dynamic_cast<MetricAccessorInterval *>(Prof::CCT::ANode::metric_accessor(this)));
 
   for (uint mId = tma.idx_ge(this, mBegId); mId < mEndId; mId = tma.idx_ge(this, mId+1)) {
     const Metric::ADesc* m = mMgr.metric(mId);
@@ -792,9 +792,9 @@ ANode::pruneByMetrics(const Metric::Mgr& mMgr, const VMAIntervalSet& ivalset,
 	}
 	numIncl++;
 	
-	double total = metric_accessor(root->id())->c_idx(mId); // root->metric(m->partner()->id());
+	double total = metric_accessor((const ANode*)root)->c_idx(mId); // root->metric(m->partner());
 	
-	double pct = metric_accessor(x->id())->c_idx(mId) * 100 / total;
+	double pct = metric_accessor(x)->c_idx(mId) * 100 / total;
 	if (pct >= thresholdPct) {
 	  isImportant = true;
 	  break;
@@ -822,7 +822,7 @@ ANode::pruneByNodeId(ANode*& x, const uint8_t* prunedNodes)
 {
   // Visiting in preorder can save a little work since a whole subtree
   // can be deleted (factoring out the destructor's recursion)
-  if (prunedNodes[x->id()]) {
+  if (prunedNodes[x]) {
     x->unlink(); // unlink 'x' from tree
     delete x;
     x = NULL;
@@ -984,8 +984,8 @@ ANode::mergeNodes(ANode* from)
   ANode* to = this;
   
   // augment "to"'s metrics with those of "from" 
-  MetricAccessor *us = metric_accessor(to->id());
-  MetricAccessor *them = metric_accessor(from->id());
+  MetricAccessor *us = metric_accessor(to);
+  MetricAccessor *them = metric_accessor(from);
   for (uint i = them->idx_ge(0); i < INT_MAX; i = them->idx_ge(i+1)) {
     us->idx(i) += them->c_idx(i);
   }
@@ -1128,8 +1128,8 @@ MergeEffect
 ANode::mergeMe(const ANode& y, MergeContext* GCC_ATTR_UNUSED mrgCtxt,
 	       uint metricBegIdx, bool mayConflict)
 {
-  MetricAccessor *me = metric_accessor(id());
-  MetricAccessor *they = metric_accessor(y.id());
+  MetricAccessor *me = metric_accessor(this);
+  MetricAccessor *they = metric_accessor(&y);
   
   for (uint y_i = they->idx_ge(0); y_i < INT_MAX; y_i = they->idx_ge(y_i + 1))
     me->idx(metricBegIdx + y_i) += they->c_idx(y_i);
@@ -1433,7 +1433,7 @@ ADynNode::writeDyn(std::ostream& o, uint GCC_ATTR_UNUSED oFlags,
     << hex << m_lip << " [lip " << lip_str() << "]" << dec;
 
   o << p << " [metrics";
-  MetricAccessor *me = metric_accessor(id());
+  MetricAccessor *me = metric_accessor(this);
   for (uint i = me->idx_ge(0); i < INT_MAX; i = me->idx_ge(i+1)) {
     o << " " << i << ":" << me->c_idx(i);
   }
@@ -1715,7 +1715,7 @@ ANode::writeXML_pre(ostream& os, uint metricBeg, uint metricEnd,
   // 2. Write associated metrics
   if (doMetrics) {
     os << pfx;
-    MetricAccessor *me = metric_accessor(id());
+    MetricAccessor *me = metric_accessor(this);
     for (unsigned i = me->idx_ge(metricBeg); i < metricEnd; i = me->idx_ge(i + 1))
       os << "<M n" << xml::MakeAttrNum(i) 
 	 << " v" << xml::MakeAttrNum(me->c_idx(i)) << "/>";

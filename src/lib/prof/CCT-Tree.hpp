@@ -331,17 +331,14 @@ public:
 private:
   static const std::string NodeNames[TyNUMBER];
 
-  static std::vector<MetricAccessor*> s_allMetrics;
+  static std::map<const ANode*,MetricAccessor*> s_allMetrics;
 
 public:
-  static MetricAccessor *metric_accessor(uint id)
+  static MetricAccessor *metric_accessor(const ANode *n)
   {
-    id /= 2;			// cf. HPCRUN_FMT_RetainIdFlag
-    if (id >= s_allMetrics.size())
-      s_allMetrics.resize(id+1);
-    if (s_allMetrics[id] == NULL)
-      s_allMetrics[id] = new MetricAccessorInterval;
-    return s_allMetrics[id];
+    if (s_allMetrics.find(n) == s_allMetrics.end())
+      s_allMetrics.insert(std::pair<const ANode*,MetricAccessorInterval*>(n,new MetricAccessorInterval));
+    return s_allMetrics.find(n)->second;
   }
 
   ANode(ANodeTy type, ANode* parent, Struct::ACodeNode* strct = NULL)
@@ -359,7 +356,7 @@ public:
   {
     // pass 2 to threaded_unique_id to keep lower bit clear for 
     // HPCRUN_FMT_RetainIdFlag
-    MetricAccessor *ma = metric_accessor(m_id);
+    MetricAccessor *ma = metric_accessor(this);
     for (unsigned int i = 0; i < metrics.numMetrics(); ++i)
       ma->idx(i) = metrics.c_idx(i);
   }
@@ -1401,15 +1398,15 @@ class Stmt
 class TreeMetricAccessorInband : public TreeMetricAccessor {
 public:
   virtual double &index(ANode *n, uint metricId, uint size = 0) {
-    MetricAccessor *ma = CCT::ANode::metric_accessor(n->id());
+    MetricAccessor *ma = CCT::ANode::metric_accessor(n);
     return ma->idx(metricId, size);
   }
   virtual int idx_ge(ANode *n, uint metricId) {
-    MetricAccessor *ma = CCT::ANode::metric_accessor(n->id());
+    MetricAccessor *ma = CCT::ANode::metric_accessor(n);
     return ma->idx_ge(metricId);
   }
   virtual MetricAccessor *nodeMetricAccessor(ANode *n) {
-    MetricAccessor *ma = CCT::ANode::metric_accessor(n->id());
+    MetricAccessor *ma = CCT::ANode::metric_accessor(n);
     return new MetricAccessorInband(ma); 
   };
 };
