@@ -278,7 +278,6 @@ private:
 
 } // namespace Prof
 
-
 //***************************************************************************
 // ANode
 //***************************************************************************
@@ -362,7 +361,9 @@ public:
   }
 
   virtual ~ANode()
-  { }
+  {
+    s_allMetrics.erase(this);
+  }
   
   // deep copy of internals (but without children)
   ANode(const ANode& x)
@@ -373,6 +374,10 @@ public:
     // pass 2 to threaded_unique_id to keep lower bit clear for 
     // HPCRUN_FMT_RetainIdFlag
     threaded_unique_id(2);
+    MetricAccessor *ma = metric_accessor(this);
+    MetricAccessor *mb = metric_accessor(&x);
+    for (unsigned int i = mb->idx_ge(0); i < INT_MAX; i = mb->idx_ge(i + 1))
+      ma->idx(i) = mb->c_idx(i);
   }
 
   // deep copy of internals (but without children)
@@ -384,6 +389,10 @@ public:
       m_type = x.m_type;
       // m_id: skip
       m_strct = x.m_strct;
+      MetricAccessor *ma = metric_accessor(this);
+      MetricAccessor *mb = metric_accessor(&x);
+      for (unsigned int i = mb->idx_ge(0); i < INT_MAX; i = mb->idx_ge(i + 1))
+	ma->idx(i) = mb->c_idx(i);
     }
     return *this;
   }
