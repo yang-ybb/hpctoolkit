@@ -127,12 +127,12 @@ public:
     MI_Vec key = make_pair(make_pair(mId, mId+1), dummy);
     set<MI_Vec>::iterator it = table.lower_bound(key);
     if (it == table.end()) {
-      if (mId < cacheItem)
+      if (mId <= cacheItem)
 	return cacheItem;
       return INT_MAX;
     }
     int lo = it->first.first;
-    if (mId < cacheItem && cacheItem < lo)
+    if (mId <= cacheItem && cacheItem < lo)
       return cacheItem;
     if (mId < lo)
       return lo;
