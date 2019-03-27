@@ -333,9 +333,14 @@ private:
   static std::map<const ANode*,MetricAccessor*> s_allMetrics;
 
 public:
+  static bool hasMetrics(const ANode *n)
+  {
+    return (s_allMetrics.find(n) != s_allMetrics.end());
+  }
+
   static MetricAccessor *metric_accessor(const ANode *n)
   {
-    if (s_allMetrics.find(n) == s_allMetrics.end())
+    if (!hasMetrics(n))
       s_allMetrics.insert(std::pair<const ANode*,MetricAccessorInterval*>(n,new MetricAccessorInterval));
     return s_allMetrics.find(n)->second;
   }

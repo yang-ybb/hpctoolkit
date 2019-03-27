@@ -1699,7 +1699,8 @@ ANode::writeXML_pre(ostream& os, uint metricBeg, uint metricEnd,
 		    uint oFlags, const char* pfx) const
 {
   bool doTag = (type() != TyRoot);
-  bool doMetrics = (oFlags & Tree::OFlg_LeafMetricsOnly) && isLeaf();
+  bool doMetrics = hasMetrics(this) &&
+    (isLeaf() || !(oFlags & Tree::OFlg_LeafMetricsOnly));
   bool isXMLLeaf = isLeaf() && !doMetrics;
 
   // 1. Write element name
