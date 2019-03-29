@@ -27,8 +27,10 @@ private:
   set<MI_Vec>::iterator cacheIter;
   double cacheVal;
   int cacheItem;
+  int nzCount;
 
   void flush(void) {
+    nzCount += (cacheVal != 0);
     if (cacheIter != table.end()) {
       MI_Vec copy(*cacheIter);
       copy.second[cacheItem - cacheIter->first.first] = cacheVal;
@@ -82,21 +84,24 @@ private:
  
 public:
   MetricAccessorInterval(void):
-    table(), cacheIter(table.end()), cacheVal(0.), cacheItem(-1)
+    table(), cacheIter(table.end()), cacheVal(0.), cacheItem(-1), nzCount(0)
   {
   }
 
   MetricAccessorInterval(const MetricAccessorInterval &src):
     table(src.table), cacheIter(table.end()), cacheVal(src.cacheVal),
-    cacheItem(src.cacheItem)
+    cacheItem(src.cacheItem), nzCount(src.nzCount)
   {
   }
 
   MetricAccessorInterval(Prof::Metric::IData &_mdata):
-    table(), cacheIter(table.end()), cacheVal(0.), cacheItem(-1)
+    table(), cacheIter(table.end()), cacheVal(0.), cacheItem(-1) , nzCount(0)
   {
-    for (unsigned i = 0; i < _mdata.numMetrics(); ++i)
+    for (unsigned i = 0; i < _mdata.numMetrics(); ++i) {
       idx(i) = _mdata.metric(i);
+      if (_mdata.metric(i) != 0)
+	++nzCount;
+    }
   }
 
   virtual double &idx(int mId, int size = 0) {
@@ -104,6 +109,8 @@ public:
        return cacheVal;
     flush();
     cacheVal = lookup(mId);
+    if (cacheVal != 0)
+      --nzCount;
     return cacheVal;
   }
 
@@ -137,6 +144,10 @@ public:
     if (mId < lo)
       return lo;
     return mId;
+  }
+
+  virtual bool empty(void) const {
+    return (nzCount == 0 && cacheVal == 0);
   }
 
 #include <iostream>

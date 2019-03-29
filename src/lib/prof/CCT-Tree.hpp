@@ -335,7 +335,9 @@ private:
 public:
   static bool hasMetrics(const ANode *n)
   {
-    return (s_allMetrics.find(n) != s_allMetrics.end());
+    std::map<const ANode*, MetricAccessor*>::iterator item = s_allMetrics.find(n);
+    return (item != s_allMetrics.end() &&
+	    !item->second->empty());
   }
 
   static MetricAccessor *metric_accessor(const ANode *n)

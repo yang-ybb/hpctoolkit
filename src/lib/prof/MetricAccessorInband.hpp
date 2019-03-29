@@ -16,6 +16,9 @@ public:
   virtual int idx_ge(int mId) const {
     return mId;
   }
+  virtual bool empty(void) const {
+    return mdata->empty();
+  }
 private:
   MetricAccessor *mdata;
 };
