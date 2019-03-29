@@ -8,10 +8,10 @@ class MetricAccessorInband : public MetricAccessor {
 public:
   MetricAccessorInband(Prof::Metric::IData &_mdata) : mdata(_mdata) {}
   ~MetricAccessorInband() {}
-  double &idx(int mId, int size = 0) {
+  double &idx(unsigned int mId, unsigned int size = 0) {
     return mdata.idx(mId, size);
   }
-  double c_idx(int mId) const {
+  double c_idx(unsigned int mId) const {
     return mdata.c_idx(mId);
   }
 private:

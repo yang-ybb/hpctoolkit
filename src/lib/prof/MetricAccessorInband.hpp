@@ -7,13 +7,13 @@
 class MetricAccessorInband : public MetricAccessor {
 public:
   MetricAccessorInband(MetricAccessor *_mdata) : mdata(_mdata) {}
-  virtual double &idx(int mId, int size = 0) {
+  virtual double &idx(unsigned int mId, unsigned int size = 0) {
     return mdata->idx(mId, size);
   }
-  virtual double c_idx(int mId) const {
+  virtual double c_idx(unsigned int mId) const {
     return mdata->c_idx(mId);
   }
-  virtual int idx_ge(int mId) const {
+  virtual unsigned int idx_ge(unsigned int mId) const {
     return mId;
   }
   virtual bool empty(void) const {

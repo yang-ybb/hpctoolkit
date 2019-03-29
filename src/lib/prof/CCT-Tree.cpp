@@ -986,7 +986,7 @@ ANode::mergeNodes(ANode* from)
   // augment "to"'s metrics with those of "from" 
   MetricAccessor *us = metric_accessor(to);
   MetricAccessor *them = metric_accessor(from);
-  for (uint i = them->idx_ge(0); i < INT_MAX; i = them->idx_ge(i+1)) {
+  for (uint i = them->idx_ge(0); i < UINT_MAX; i = them->idx_ge(i+1)) {
     us->idx(i) += them->c_idx(i);
   }
   
@@ -1131,7 +1131,7 @@ ANode::mergeMe(const ANode& y, MergeContext* GCC_ATTR_UNUSED mrgCtxt,
   MetricAccessor *me = metric_accessor(this);
   MetricAccessor *they = metric_accessor(&y);
   
-  for (uint y_i = they->idx_ge(0); y_i < INT_MAX; y_i = they->idx_ge(y_i + 1))
+  for (uint y_i = they->idx_ge(0); y_i < UINT_MAX; y_i = they->idx_ge(y_i + 1))
     me->idx(metricBegIdx + y_i) += they->c_idx(y_i);
   
   MergeEffect noopEffect;
@@ -1434,7 +1434,7 @@ ADynNode::writeDyn(std::ostream& o, uint GCC_ATTR_UNUSED oFlags,
 
   o << p << " [metrics";
   MetricAccessor *me = metric_accessor(this);
-  for (uint i = me->idx_ge(0); i < INT_MAX; i = me->idx_ge(i+1)) {
+  for (uint i = me->idx_ge(0); i < UINT_MAX; i = me->idx_ge(i+1)) {
     o << " " << i << ":" << me->c_idx(i);
   }
   o << "]" << endl;

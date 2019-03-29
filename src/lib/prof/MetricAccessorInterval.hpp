@@ -11,7 +11,7 @@ using std::pair;
 using std::set;
 using std::vector;
 
-typedef std::pair<int, int> MetricInterval;
+typedef std::pair<unsigned int, unsigned int> MetricInterval;
 typedef pair<MetricInterval, vector<double> > MI_Vec;
 
 class MI_Vec_Compare {
@@ -26,8 +26,8 @@ private:
   set<MI_Vec, MI_Vec_Compare> table;
   set<MI_Vec>::iterator cacheIter;
   double cacheVal;
-  int cacheItem;
-  int nzCount;
+  unsigned int cacheItem;
+  unsigned int nzCount;
 
   void flush(void) {
     nzCount += (cacheVal != 0);
@@ -67,7 +67,7 @@ private:
     }
   }
 
-  double lookup(int mId) {
+  double lookup(unsigned int mId) {
     vector<double> dummy;
     MI_Vec key = make_pair(make_pair(mId, mId+1), dummy);
     set<MI_Vec>::iterator it = table.find(key);
@@ -75,8 +75,8 @@ private:
     cacheItem = mId;
     if (it == table.end())
       return 0;
-    int lo = it->first.first;
-    int hi = it->first.second;
+    unsigned int lo = it->first.first;
+    unsigned int hi = it->first.second;
     if (lo <= mId && mId < hi)
       return it->second[mId - lo];
     return 0;
@@ -104,7 +104,7 @@ public:
     }
   }
 
-  virtual double &idx(int mId, int size = 0) {
+  virtual double &idx(unsigned int mId, unsigned int size = 0) {
     if (cacheItem == mId)
        return cacheVal;
     flush();
@@ -114,7 +114,7 @@ public:
     return cacheVal;
   }
 
-  virtual double c_idx(int mId) const {
+  virtual double c_idx(unsigned int mId) const {
     if (cacheItem == mId)
       return cacheVal;
     vector<double> dummy;
@@ -122,23 +122,23 @@ public:
     set<MI_Vec>::iterator it = table.find(key);
     if (it == table.end())
       return 0;
-    int lo = it->first.first;
-    int hi = it->first.second;
+    unsigned int lo = it->first.first;
+    unsigned int hi = it->first.second;
     if (lo <= mId && mId < hi)
       return it->second[mId - lo];
     return 0;
   }
 
-  virtual int idx_ge(int mId) const {
+  virtual unsigned idx_ge(unsigned mId) const {
     vector<double> dummy;
     MI_Vec key = make_pair(make_pair(mId, mId+1), dummy);
     set<MI_Vec>::iterator it = table.lower_bound(key);
     if (it == table.end()) {
       if (mId <= cacheItem)
 	return cacheItem;
-      return INT_MAX;
+      return UINT_MAX;
     }
-    int lo = it->first.first;
+    unsigned int lo = it->first.first;
     if (mId <= cacheItem && cacheItem < lo)
       return cacheItem;
     if (mId < lo)

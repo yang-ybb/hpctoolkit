@@ -188,14 +188,14 @@ makeFileName(const char* baseNm, const char* ext, int myRank);
 class MetricAccessorOutOfBand : public MetricAccessor {
 public:
   MetricAccessorOutOfBand(ParallelAnalysis::PackedMetrics &_pm, int _nodeId) : pm(_pm), nodeId(_nodeId) {}
-  double &idx(int metricId, int size = 0) {
+  double &idx(unsigned int metricId, unsigned int size = 0) {
     return pm.idx(nodeId, metricId);
   }
-  double c_idx(int metricId) const {
+  double c_idx(unsigned int metricId) const {
     return pm.idx(nodeId, metricId);
   }
-  int idx_ge(int metricId) const {
-    return metricId < pm.mEndId() ? metricId : INT_MAX;
+  unsigned int idx_ge(unsigned int metricId) const {
+    return metricId < pm.mEndId() ? metricId : UINT_MAX;
   }
 private:
   ParallelAnalysis::PackedMetrics &pm;
@@ -213,7 +213,7 @@ public:
   virtual MetricAccessor *nodeMetricAccessor(Prof::CCT::ANode *n) {
     return new MetricAccessorOutOfBand(pm, n->id());
   };
-  virtual int idx_ge(Prof::CCT::ANode *n, uint metricId) {
+  virtual unsigned int idx_ge(Prof::CCT::ANode *n, uint metricId) {
     return metricId;
   };
 private:
