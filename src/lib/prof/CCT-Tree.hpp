@@ -135,6 +135,7 @@ class ANode;
 class TreeMetricAccessor {
 public:
   virtual double &index(ANode *n, uint metricId, uint size = 0) = 0;
+  virtual double c_index(ANode *n, uint metricId, uint size = 0) = 0;
   virtual uint idx_ge(ANode *n, uint metricId) = 0;
   virtual MetricAccessor *nodeMetricAccessor(ANode *n) = 0;
 };
@@ -1416,6 +1417,10 @@ public:
   virtual double &index(ANode *n, uint metricId, uint size = 0) {
     MetricAccessor *ma = CCT::ANode::metric_accessor(n);
     return ma->idx(metricId, size);
+  }
+  virtual double index(ANode *n, uint metricId, uint size = 0) {
+    MetricAccessor *ma = CCT::ANode::metric_accessor(n);
+    return ma->c_idx(metricId, size);
   }
   virtual unsigned int idx_ge(ANode *n, uint metricId) {
     MetricAccessor *ma = CCT::ANode::metric_accessor(n);
