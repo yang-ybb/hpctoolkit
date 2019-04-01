@@ -654,7 +654,7 @@ ANode::aggregateMetricsExcl(AProcNode* frame, const VMAIntervalSet& ivalset, Tre
       const VMAInterval& ival = *it;
       uint mBegId = (uint)ival.beg(), mEndId = (uint)ival.end();
 
-      for (uint mId = tma.idx_ge(n, mBegId); mId < mEndId; mId = tma.idx_ge(n, mId+1)) {
+      for (uint mId = mBegId; mId < mEndId; ++mId) {
 	double mVal = tma.c_index(n, mId); 
 	tma.index(n_parent, mId, mEndId/*size*/) += mVal;
 	if (frame && frame != n_parent) {
@@ -699,7 +699,7 @@ ANode::computeMetricsMe(const Metric::Mgr& mMgr, TreeMetricAccessor &tma, uint m
 {
   MetricAccessorInterval mda(*dynamic_cast<MetricAccessorInterval *>(Prof::CCT::ANode::metric_accessor(this)));
 
-  for (uint mId = tma.idx_ge(this, mBegId); mId < mEndId; mId = tma.idx_ge(this, mId+1)) {
+  for (uint mId = mBegId; mId < mEndId; ++mId) {
     const Metric::ADesc* m = mMgr.metric(mId);
     const Metric::DerivedDesc* mm = dynamic_cast<const Metric::DerivedDesc*>(m);
     if (mm && mm->expr()) {
@@ -738,7 +738,7 @@ void
 ANode::computeMetricsIncrMe(const Metric::Mgr& mMgr, TreeMetricAccessor &tma, uint mBegId, uint mEndId,
 			    Metric::AExprIncr::FnTy fn)
 {
-  for (uint mId = tma.idx_ge(this, mBegId); mId < mEndId; mId = tma.idx_ge(this, mId+1)) {
+  for (uint mId = mBegId; mId < mEndId; ++mId) {
     const Metric::ADesc* m = mMgr.metric(mId);
     const Metric::DerivedIncrDesc* mm =
       dynamic_cast<const Metric::DerivedIncrDesc*>(m);
