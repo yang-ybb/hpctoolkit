@@ -135,7 +135,7 @@ class ANode;
 class TreeMetricAccessor {
 public:
   virtual double &index(ANode *n, uint metricId, uint size = 0) = 0;
-  virtual double c_index(ANode *n, uint metricId, uint size = 0) = 0;
+  virtual double c_index(ANode *n, uint metricId) = 0;
   virtual uint idx_ge(ANode *n, uint metricId) = 0;
   virtual MetricAccessor *nodeMetricAccessor(ANode *n) = 0;
 };
@@ -345,7 +345,13 @@ public:
   {
     if (!hasMetrics(n))
       s_allMetrics.insert(std::pair<const ANode*,MetricAccessorInterval*>(n,new MetricAccessorInterval));
-    return s_allMetrics.find(n)->second;
+#if 0
+    MetricAccessorInterval *mav = static_cast<MetricAccessorInterval*>(s_allMetrics.find(n)->second);
+    mav->dump();
+    return mav;
+#else
+    return (s_allMetrics.find(n)->second);
+#endif
   }
 
   ANode(ANodeTy type, ANode* parent, Struct::ACodeNode* strct = NULL)
@@ -1418,9 +1424,9 @@ public:
     MetricAccessor *ma = CCT::ANode::metric_accessor(n);
     return ma->idx(metricId, size);
   }
-  virtual double index(ANode *n, uint metricId, uint size = 0) {
+  virtual double c_index(ANode *n, uint metricId) {
     MetricAccessor *ma = CCT::ANode::metric_accessor(n);
-    return ma->c_idx(metricId, size);
+    return ma->c_idx(metricId);
   }
   virtual unsigned int idx_ge(ANode *n, uint metricId) {
     MetricAccessor *ma = CCT::ANode::metric_accessor(n);
