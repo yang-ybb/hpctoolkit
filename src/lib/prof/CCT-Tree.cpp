@@ -654,7 +654,7 @@ ANode::aggregateMetricsExcl(AProcNode* frame, const VMAIntervalSet& ivalset, Tre
       const VMAInterval& ival = *it;
       uint mBegId = (uint)ival.beg(), mEndId = (uint)ival.end();
 
-      for (uint mId = mBegId; mId < mEndId; ++mId) {
+      for (uint mId = tma.idx_ge(n, mBegId); mId < mEndId; mId = tma.idx_ge(n, mId+1)) {
 	double mVal = tma.c_index(n, mId); 
 	tma.index(n_parent, mId, mEndId/*size*/) += mVal;
 	if (frame && frame != n_parent) {
