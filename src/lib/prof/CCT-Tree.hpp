@@ -388,8 +388,9 @@ public:
     // pass 2 to threaded_unique_id to keep lower bit clear for 
     // HPCRUN_FMT_RetainIdFlag
     threaded_unique_id(2);
-    MetricAccessor *ma = metric_accessor(this);
     MetricAccessor *mb = metric_accessor(&x);
+    s_allMetrics.erase(this);
+    MetricAccessor *ma = metric_accessor(this);
     for (unsigned int i = mb->idx_ge(0); i < UINT_MAX; i = mb->idx_ge(i + 1))
       ma->idx(i) = mb->c_idx(i);
   }
